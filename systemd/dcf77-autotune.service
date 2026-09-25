@@ -1,0 +1,38 @@
+# Installation:
+#   sudo cp dcf77_autotune.py /opt/dcf77_autotune.py
+#   sudo cp dcf77-autotune.service /etc/systemd/system/
+#   sudo cp dcf77-autotune.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now dcf77-autotune.timer
+#
+# Was passiert ist, nachsehen:
+#   journalctl -u dcf77-autotune.service --no-pager -n 50
+#   systemctl list-timers dcf77-autotune.timer
+#
+# Testlauf von Hand, ohne etwas zu aendern:
+#   sudo python3 /opt/dcf77_autotune.py --dry-run
+
+[Unit]
+Description=DCF77 Autotune - Empfaengerverzoegerung nachjustieren
+After=chrony.service dcf77-decoder.service
+Wants=chrony.service
+
+[Service]
+Type=oneshot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 -u /opt/dcf77_autotune.py
+User=root
+
+# --- Härtung ---
+# Begrenzt, was dieser Dienst anrichten kann, falls sich in unseren
+# eigenen Skripten ein Fehler einschleicht. Kein Schutz gegen Angreifer
+# von außen - der Dienst nimmt keine Verbindungen entgegen.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+# Die beiden einzigen Pfade, in die dieser Dienst schreiben darf.
+# Alles andere im Dateisystem bleibt für ihn schreibgeschützt - auch
+# wenn er als root läuft.
+ReadWritePaths=/etc/ntp-0.conf /var/lib/dcf77-autotune

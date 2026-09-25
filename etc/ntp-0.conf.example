@@ -1,0 +1,49 @@
+# /etc/ntp-0.conf
+# Konfiguration fuer die ntp-0-Zusatzdienste (aktuell: MQTT-Status fuer
+# Home Assistant). Getrennt vom eigentlichen Script gehalten, damit ein
+# Update/Ersetzen von dcf77_ha_status.py die Zugangsdaten nicht ueberschreibt.
+#
+# Rechte einschraenken (enthaelt ein Passwort im Klartext):
+#   sudo chown root:root /etc/ntp-0.conf
+#   sudo chmod 600 /etc/ntp-0.conf
+
+[mqtt]
+broker = 192.0.2.60
+port = 1883
+user =
+password =
+
+[dcf77]
+# Kompensation der Verarbeitungsverzoegerung des DCF77-Empfaengermoduls,
+# in Sekunden. Wird vom Decoder (dcf77_ntp_shm.py) bei jeder Minute neu
+# eingelesen und vom Autotune-Skript (dcf77_autotune.py) automatisch
+# nachjustiert. Zulaessiger Bereich: 0.30 - 1.50.
+#
+# Manuelles Aendern ist jederzeit moeglich - der Decoder uebernimmt den
+# neuen Wert ohne Neustart ab der naechsten Minute.
+receiver_delay = 0.756
+
+[backup]
+# NAS-Ziel für das Konfigurations-Backup (FritzBox 7530, SMB-Freigabe).
+#
+# server    = IP oder Hostname der FritzBox
+# share     = Name der SMB-Freigabe, ermittelt mit
+#                smbclient -L //192.0.2.50 -U backup-user
+# subdir    = Unterverzeichnis innerhalb der Freigabe. Achtung: die
+#             Freigabe "nas-share" beginnt eine Ebene ÜBER dem Datenträger -
+#             darin liegt erst das Verzeichnis "nas_hdd" (mit Unterstrich),
+#             erst darunter geht es mit data/backups/... weiter.
+# workgroup = SMB-Arbeitsgruppe. Leer lassen, wenn nicht benötigt.
+# keep      = wie viele Generationen auf dem NAS behalten werden
+#
+# gpg_recipient: optional. Ist hier eine Schlüssel-ID oder E-Mail
+#   eingetragen, wird das Archiv vor dem Hochladen damit verschlüsselt.
+#   Leer lassen heißt: unverschlüsselt auf der Freigabe.
+server = 192.0.2.50
+share = nas-share
+subdir = nas_hdd/data/backups/ntp-0.example.lan
+workgroup = WORKGROUP
+user =
+password =
+keep = 8
+gpg_recipient =

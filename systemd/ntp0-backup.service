@@ -1,0 +1,52 @@
+# Installation:
+#   sudo cp ntp0_backup.py /opt/ntp0_backup.py
+#   sudo cp ntp0-backup.service /etc/systemd/system/
+#   sudo cp ntp0-backup.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now ntp0-backup.timer
+#
+# Sofort ein Backup auslösen:
+#   sudo systemctl start ntp0-backup.service
+#
+# Ergebnis ansehen:
+#   journalctl -u ntp0-backup.service --no-pager -n 30
+#   systemctl list-timers ntp0-backup.timer
+#
+# Testlauf ohne Upload (nur lokales Archiv):
+#   sudo python3 /opt/ntp0_backup.py --local-only
+
+[Unit]
+Description=Konfigurations-Backup des DCF77-NTP-Servers aufs NAS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 -u /opt/ntp0_backup.py
+User=root
+
+# Das Skript hängt eine Netzwerkfreigabe ein - das braucht Zeit, wenn
+# das NAS gerade im Standby ist.
+TimeoutStartSec=15min
+
+# --- Härtung (bewusst zurückhaltend) ---
+# Dieser Dienst verträgt die übliche Härtung NICHT vollständig:
+#
+#   ProtectHome=yes  würde /home unzugänglich machen. Das Backup sichert
+#       aber /home/pi/.ssh/authorized_keys - der Schlüssel fehlte
+#       dann im Archiv, ohne dass es auffällt. Deshalb nur read-only:
+#       lesen ja, schreiben nein.
+#
+#   ProtectSystem=strict  würde das ganze Dateisystem schreibgeschützt
+#       einhängen. Das Skript legt sein Archiv unter /var/tmp an und
+#       hängt die NAS-Freigabe ein - beides schlüge fehl. full schützt
+#       /usr, /boot und /etc und lässt /var beschreibbar.
+#
+#   PrivateTmp  bleibt weg: Der Dienst erzeugt einen eigenen Mountpunkt
+#       für die SMB-Freigabe. Zusätzliche Mount-Namespace-Trennung ist
+#       hier eine unnötige Fehlerquelle.
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=read-only
+

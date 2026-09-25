@@ -1,0 +1,40 @@
+# Installation:
+#   sudo cp dcf77_ha_status.py /opt/dcf77_ha_status.py
+#   sudo cp dcf77-ha-status.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now dcf77-ha-status.service
+#
+# WICHTIG: vorher in /opt/dcf77_ha_status.py die MQTT-Zugangsdaten
+# (MQTT_BROKER, MQTT_USER, MQTT_PASSWORD) eintragen!
+#
+# Status pruefen:
+#   sudo systemctl status dcf77-ha-status.service
+#   journalctl -u dcf77-ha-status.service -f
+
+[Unit]
+Description=DCF77 Status -> Home Assistant (MQTT)
+After=network.target chrony.service
+
+[Service]
+Type=simple
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 -u /opt/dcf77_ha_status.py
+Restart=always
+RestartSec=10
+User=root
+
+
+# --- Härtung ---
+# Hier bewusst ProtectSystem=full statt strict: Der Dienst ruft chronyc
+# und fail2ban-client auf, die über Unix-Sockets unter /run kommunizieren.
+# Eine Verbindung zu einem Unix-Socket setzt Schreibrecht auf die
+# Socket-Datei voraus - bei strict wäre /run nur lesbar und beide
+# Aufrufe würden scheitern. full schützt /usr, /boot und /etc und lässt
+# /run und /var beschreibbar.
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

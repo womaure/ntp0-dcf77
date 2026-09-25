@@ -1,0 +1,16 @@
+[Unit]
+Description=Woechentliches Konfigurations-Backup des NTP-Servers
+
+[Timer]
+# Sonntags um 03:30 Uhr. Die Konfiguration ändert sich selten, häufiger
+# wäre nur Schreiblast auf der SD-Karte - genau dem Verschleiß, gegen
+# den das Backup absichern soll.
+OnCalendar=Sun *-*-* 03:30:00
+
+# Verpasste Läufe nachholen (Pi war aus, NAS im Standby)
+Persistent=true
+
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

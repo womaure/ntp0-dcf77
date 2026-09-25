@@ -1,0 +1,13 @@
+[Unit]
+Description=Taeglicher Abgleich der Hardware-RTC mit der Systemzeit
+
+[Timer]
+# Einmal taeglich, plus einmalig kurz nach dem Booten (damit die RTC
+# auch bei Systemen mit seltenen Neustarts zeitnah einen frischen
+# Wert bekommt).
+OnCalendar=daily
+OnBootSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

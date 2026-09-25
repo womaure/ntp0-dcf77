@@ -1,0 +1,26 @@
+[Unit]
+Description=Regelmaessige Pruefung der DCF77-Empfaengerverzoegerung
+
+[Timer]
+# Stuendlich pruefen. Da erst nach 3 konsistenten Messungen korrigiert
+# wird, dauert eine Anpassung damit rund 3 Stunden, und bis ein groesserer
+# Fehler ausgeregelt ist etwa einen halben Tag.
+#
+# Frueher lief der Timer nur alle 6 Stunden. Zusammen mit den 3 noetigen
+# Messungen ergab das 18 Stunden bis zur ERSTEN Korrektur und mehrere
+# Tage, bis ein Fehler von rund 100 ms ausgeregelt gewesen waere - das
+# war praktisch unbrauchbar.
+OnCalendar=hourly
+
+# Nicht direkt beim Booten laufen: DCF77 braucht nach einem Neustart
+# erst bis zu 20 Minuten, bis es wieder eingeschwungen ist.
+OnBootSec=45min
+
+# Verpasste Laeufe (z.B. nach Stromausfall) nachholen
+Persistent=true
+
+# Etwas Streuung, damit der Lauf nicht exakt auf die Minute faellt
+RandomizedDelaySec=3min
+
+[Install]
+WantedBy=timers.target

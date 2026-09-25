@@ -1,0 +1,49 @@
+# /etc/fail2ban/jail.local
+#
+# Installation:
+#   sudo cp jail.local /etc/fail2ban/jail.local
+#   sudo systemctl enable --now fail2ban
+#   sudo systemctl restart fail2ban
+#
+# Status pruefen:
+#   sudo fail2ban-client status
+#   sudo fail2ban-client status sshd
+#
+# WICHTIG: Unsere /etc/nftables.conf beginnt mit "flush ruleset".
+# Wird diese Datei manuell neu geladen (sudo nft -f /etc/nftables.conf),
+# waehrend fail2ban aktive Sperren gesetzt hat, gehen diese Sperren
+# dabei verloren (fail2ban selbst merkt das nicht sofort - es fuehrt
+# seine eigene Buchhaltung weiter, aber die Sperre wirkt bis zum
+# naechsten Ban-Ereignis nicht mehr). Nach einem manuellen Neuladen
+# der Firewall daher zur Sicherheit einmal:
+#   sudo systemctl restart fail2ban
+
+[DEFAULT]
+# nftables statt iptables nutzen (wir haben kein iptables aktiv)
+banaction = nftables-multiport
+banaction_allports = nftables-allports
+
+# Sperre nach 5 Fehlversuchen
+maxretry = 5
+
+# ...innerhalb von 10 Minuten
+findtime = 10m
+
+# ...fuer 1 Stunde gesperrt. Bei wiederholten Verstoessen erhoeht
+# sich das automatisch (siehe bantime.increment unten).
+bantime = 1h
+
+# Wiederholungstaeter laenger sperren (exponentiell steigend, bis max. 1 Woche)
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 1w
+
+[sshd]
+enabled = true
+port = 22
+filter = sshd
+# Bookworm ohne rsyslog hat kein /var/log/auth.log - Logs kommen nur
+# noch ins systemd-Journal. Daher explizit journal-basiertes Backend
+# statt der log-Datei-basierten Auto-Erkennung.
+backend = systemd
+journalmatch = _SYSTEMD_UNIT=ssh.service

@@ -1,0 +1,14 @@
+# Nie einchecken: die Konfiguration enthaelt Passwoerter im Klartext
+ntp-0.conf
+!etc/ntp-0.conf.example
+
+# Backup-Archive enthalten SSH-Hostschluessel und Zugangsdaten
+*.tar.gz
+*.tar.gz.gpg
+
+# Laufzeitdaten
+*.pyc
+__pycache__/
+state.json
+status.json
+sd_samples.json

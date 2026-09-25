@@ -1,0 +1,41 @@
+# Installation:
+#   sudo cp rtc-sync.service /etc/systemd/system/
+#   sudo cp rtc-sync.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now rtc-sync.timer
+#
+# Status pruefen:
+#   systemctl list-timers rtc-sync.timer
+#   journalctl -u rtc-sync.service
+
+[Unit]
+Description=Hardware-RTC mit Systemzeit (DCF77/chrony) abgleichen
+# Wichtig: erst starten, wenn chrony eine gute Zeit hat, sonst
+# wuerde eine noch nicht synchronisierte Systemzeit in die RTC
+# geschrieben werden.
+After=chrony.service
+Requires=chrony.service
+
+[Service]
+Type=oneshot
+# Nur schreiben, wenn chrony die Systemzeit als synchronisiert einstuft
+# (verhindert, dass eine ungenaue Zeit kurz nach dem Booten in die RTC
+# geschrieben wird, bevor DCF77/Internet-NTP eingeschwungen sind).
+#
+# Argumente von waitsync: max-tries max-correction max-skew interval
+#   12  = bis zu 12 Versuche
+#   0.1 = verbleibende Korrektur muss unter 100 ms liegen
+#   0   = Skew-Pruefung ABGESCHALTET (0 heisst "nicht pruefen").
+#         Der frueher hier gesetzte Wert 5 ppm war zu streng: nach einem
+#         Neustart lag der gemessene Skew schon bei 4.566 ppm, also
+#         knapp darunter. Ein Ausreisser darueber haette den RTC-
+#         Abgleich stillschweigend ausfallen lassen - und der Skew sagt
+#         ohnehin nichts darueber aus, ob die aktuelle Uhrzeit stimmt.
+#   5   = alle 5 Sekunden erneut pruefen (also bis zu 60 s Geduld)
+#
+# Frueher stand hier "waitsync 1 0.5 5 0": ein einziger Versuch ohne
+# zweite Chance. War chrony in genau dem Moment nicht synchron, wurde
+# der Abgleich uebersprungen - und die RTC blieb bis zum naechsten Tag
+# auf dem alten Stand.
+ExecCondition=/usr/bin/chronyc waitsync 12 0.1 0 5
+ExecStart=/sbin/hwclock -w

@@ -1,0 +1,46 @@
+# /etc/logrotate.d/chrony
+#
+# Basiert auf der Version, die das Debian-Paket mitbringt - ergänzt um
+# explizite Vorgaben zu Häufigkeit, Anzahl und Größe.
+#
+# Die Originalversion enthielt nur missingok, nocreate, sharedscripts und
+# das postrotate-Skript. Damit galten die globalen Vorgaben aus
+# /etc/logrotate.conf (typischerweise wöchentlich, vier Generationen) und
+# es gab keine Größenbegrenzung. Da mit "log ... refclocks" jetzt deutlich
+# mehr geschrieben wird als vorher, werden die Werte hier explizit gesetzt
+# - so hängen sie nicht mehr an den globalen Vorgaben.
+#
+# Aus dem Original unverändert übernommen:
+#   nocreate      - chronyd legt die Dateien nach 'cyclelogs' selbst neu an.
+#                   Ein 'create' hier waere ein Widerspruch dazu.
+#   sharedscripts - postrotate nur einmal ausfuehren, nicht je Logdatei.
+#
+# Testlauf ohne Änderungen:
+#     sudo logrotate -d /etc/logrotate.d/chrony
+# Rotation erzwingen:
+#     sudo logrotate -f /etc/logrotate.d/chrony
+
+/var/log/chrony/*.log {
+    # Wöchentlich, 8 Generationen: rund zwei Monate Historie. Genug, um
+    # eine Drift über mehrere Wochen nachzuvollziehen.
+    weekly
+    rotate 8
+
+    # Zusätzlich rotieren, sobald eine Datei 5 MB überschreitet. Fängt
+    # Störungsphasen ab, in denen ungewöhnlich viel anfällt.
+    maxsize 5M
+
+    # Alte Generationen komprimieren - Textlogs schrumpfen stark.
+    # delaycompress lässt die jüngste rotierte Datei unkomprimiert,
+    # damit sie sich ohne Umweg lesen lässt.
+    compress
+    delaycompress
+
+    missingok
+    notifempty
+    nocreate
+    sharedscripts
+    postrotate
+        /usr/bin/chronyc cyclelogs > /dev/null 2>&1 || true
+    endscript
+}
